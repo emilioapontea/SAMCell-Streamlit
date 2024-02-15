@@ -1,35 +1,46 @@
 import os
 import streamlit as st
 import csv
+from io_utils import ImageHandler
 
-with st.sidebar:
-    "Welcome to the sidebar"
+handler = ImageHandler()
 
-st.title("SAMCell")
-st.caption("A Cell Segmentation Model powered by Segment Anything Model")
+file_names = []
 
-uploaded_file = st.file_uploader("Upload an article", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
+def handle_file_upload(file):
+    if file is not None:
+        file_names.append(file.name)
+        st.success(f"There are now {len(file_names)} files uploaded!")
 
-if uploaded_file:
-    st.sucess(f"Uploaded {uploaded_file.name} successfully.")
+def main():
+    sidebar = st.sidebar
+    with sidebar:
+        "Welcome to the sidebar"
+        filename = st.text_input("Enter filename:", handler._default_csv)
 
-# Text input field for user to enter data
-# user_input = st.text_input("Enter some text:")
-lines_to_write = [
-    ['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'],
-]
+    st.title("SAMCell")
+    st.caption("A Cell Segmentation Model powered by Segment Anything Model.  \nDeveloped at the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
 
-# Button to trigger writing data to file
-if st.button("Write to File"):
-    # Get the filename from the user
-    filename = st.text_input("Enter filename:", "metrics.csv")
-    os.makedirs("output", exist_ok=True)
+    uploaded_file = st.file_uploader("Upload an article", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
 
-    # Open the file in write mode and write the user input
-    with open(os.path.join("output", filename), 'w', newline='') as csvfile:
-        # csvfile.write(user_input)
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerows(lines_to_write)
+    # st.success(handler.file_upload(uploaded_file))
+    handle_file_upload(uploaded_file)
 
-    # Confirmation message
-    st.success(f"Data written to {filename} successfully.")
+
+    lines_to_write = [
+        ['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'],
+    ]
+
+    if st.button("Write to File"):
+
+        # Open the file in write mode and write the user input
+        with open(handler.csv_path, 'w', newline='') as csvfile:
+            # csvfile.write(user_input)
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerows(lines_to_write)
+
+        # Confirmation message
+        st.success(f"Data written to {filename} successfully.")
+
+if __name__ == "__main__":
+    main()
