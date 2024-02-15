@@ -3,6 +3,7 @@ from streamlit_image_comparison import image_comparison
 import pandas as pd
 import numpy as np
 from PIL import Image
+from utils import *
 
 @st.cache_data
 def df_to_csv(df):
@@ -11,15 +12,21 @@ def df_to_csv(df):
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model")
 
-uploaded_file = st.file_uploader("Upload an article", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
+col1, col2 = st.columns(spec=2)
+
+with col1:
+    uploaded_file1 = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), key=1)
+    # if uploaded_file1: st.success(f"Uploaded {uploaded_file1.name} successfully.")
+with col2:
+    uploaded_file2 = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), key=2)
+    # if uploaded_file2: st.success(f"Uploaded {uploaded_file1.name} successfully.")
 
 
-if uploaded_file:
+if uploaded_file1 and uploaded_file2:
     image_comparison(
-        img1=Image.open(uploaded_file),
-        img2=Image.open(uploaded_file)
+        img1=Image.open(uploaded_file1),
+        img2=Image.open(uploaded_file2)
     )
-    st.success(f"Uploaded {uploaded_file.name} successfully.")
 
 df = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
 
