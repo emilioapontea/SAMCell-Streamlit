@@ -49,3 +49,18 @@ def computeMetrics(output: np.array) -> Tuple[int, float, str, float]:
     confluency = f'{int(confluency)}%'
 
     return cell_count, cell_area, confluency, avg_neighbors
+
+# class ToyModel(torch.nn.Module):
+#     def __init__(self):
+#         return
+
+#     def eval(self, data: np.array) -> np.array:
+#         inputs = torch.from_numpy(data)
+#         # sobel = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
+#         # depth = t.size()[1]
+#         # channels = t.size()[2]
+#         # sobel_kernel = torch.tensor(sobel, dtype=torch.float32).unsqueeze(0).expand(depth, 1, channels, 3, 3)
+#         filters = torch.randn(8, 4, 3, 3)
+#         inputs = torch.randn(1, 4, 5, 5)
+#         outputs = torch.nn.functional.conv2d(inputs, filters, padding=1)
+#         return outputs.numpy()
