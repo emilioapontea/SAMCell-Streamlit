@@ -1,8 +1,9 @@
 from typing import Tuple
 import numpy as np
 from PIL import Image
+import torch
 
-def convert_label_to_rainbow(label: np.array) -> np.array:
+def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
     label_rainbow = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
     for cell in np.unique(label):
         if cell == 0:
@@ -10,7 +11,7 @@ def convert_label_to_rainbow(label: np.array) -> np.array:
         label_rainbow[label == cell] = np.random.rand(3) * 255
     return label_rainbow
 
-def computeMetrics(output: np.array) -> Tuple[int, float, str, float]:
+def computeMetrics(output: np.ndarray) -> Tuple[int, float, str, float]:
     #compute cell count
     cell_count = len(np.unique(output)) - 1
 
@@ -50,17 +51,20 @@ def computeMetrics(output: np.array) -> Tuple[int, float, str, float]:
 
     return cell_count, cell_area, confluency, avg_neighbors
 
-# class ToyModel(torch.nn.Module):
-#     def __init__(self):
-#         return
+class ToyModel(torch.nn.Module):
+    def __init__(self):
+        return
 
-#     def eval(self, data: np.array) -> np.array:
-#         inputs = torch.from_numpy(data)
-#         # sobel = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
-#         # depth = t.size()[1]
-#         # channels = t.size()[2]
-#         # sobel_kernel = torch.tensor(sobel, dtype=torch.float32).unsqueeze(0).expand(depth, 1, channels, 3, 3)
-#         filters = torch.randn(8, 4, 3, 3)
-#         inputs = torch.randn(1, 4, 5, 5)
-#         outputs = torch.nn.functional.conv2d(inputs, filters, padding=1)
-#         return outputs.numpy()
+    def forward(self, data: np.ndarray) -> np.ndarray:
+        inputs = torch.from_numpy(data[:,:,:3]).to(torch.float32)
+        inputs = torch.unsqueeze(inputs.permute(2, 0, 1), 0)
+        # sobel = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
+        # depth = t.size()[1]
+        # channels = t.size()[2]
+        # sobel_kernel = torch.tensor(sobel, dtype=torch.float32).unsqueeze(0).expand(depth, 1, channels, 3, 3)
+        filters = torch.randn(1, 3, 3, 3).to(torch.float32)
+        outputs = torch.squeeze(torch.nn.functional.conv2d(inputs, filters, padding=1))
+        return outputs.numpy()
+
+    def __call__(self, data: np.ndarray) -> np.ndarray:
+        return self.forward(data)

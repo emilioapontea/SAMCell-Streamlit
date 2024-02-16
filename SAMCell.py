@@ -9,24 +9,29 @@ from utils import *
 def df_to_csv(df):
     return df.to_csv().encode('utf-8')
 
+@st.cache_data
+def get_model_segmentation(uploaded_file):
+    if uploaded_file:
+        model = ToyModel()
+        input_image = Image.open(uploaded_file)
+        output_image = model(np.array(input_image))
+        image_comparison(
+            img1=input_image,
+            img2=output_image
+        )
+
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model")
 
-col1, col2 = st.columns(spec=2)
+uploaded_file = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
+get_model_segmentation(uploaded_file)
 
-with col1:
-    uploaded_file1 = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), key=1)
-    # if uploaded_file1: st.success(f"Uploaded {uploaded_file1.name} successfully.")
-with col2:
-    uploaded_file2 = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), key=2)
-    # if uploaded_file2: st.success(f"Uploaded {uploaded_file1.name} successfully.")
-
-
-if uploaded_file1 and uploaded_file2:
-    image_comparison(
-        img1=Image.open(uploaded_file1),
-        img2=Image.open(uploaded_file2)
-    )
+# TODO: Multiple files
+# uploaded_files = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), accept_multiple_files=True)
+# if uploaded_files:
+#     for file in uploaded_files:
+#         model = ToyModel()
+#         data =
 
 df = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
 
