@@ -19,11 +19,34 @@ def get_model_segmentation(uploaded_file, new_width):
     return input_image.resize((new_width, new_height)), output_image
 
 @st.cache_data
-def append_metrics(filename, output):
-    st.session_state['df'].loc[len(st.session_state['df'])] = (filename, *compute_metrics(output))
+def append_metrics(file, output):
+    metrics = compute_metrics(output)
+    st.session_state['df'].loc[len(st.session_state['df'])] = (file.name, *metrics)
+    st.session_state['imgs'][file.name] = file
+    return metrics
+
+def percentage_circle(label, percentage, size=100):
+    percentage = min(max(percentage, 0), 100)
+    circumference = 2 * 3.141592 * (size / 2 - 10)
+    progress = circumference * (percentage / 100)
+    color = st.get_option("theme.primaryColor")
+    color = "#ff4b4b" if not color else color
+
+        # <circle cx="{size/2}" cy="{size/2}" r="{size/2 - 10}" stroke="#d3d3d3" stroke-width="3" fill="none" />
+    return f"""
+    {label}  \n
+    <svg width="{size}" height="{size}">
+        <circle cx="{size/2}" cy="{size/2}" r="{size/2 - 10}" stroke={color} stroke-width="5" fill="none"
+            stroke-dasharray="{progress} {circumference}" stroke-dashoffset="0" transform="rotate(-90 {size/2} {size/2})"
+            stroke-linecap="round"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Source Sans Pro" font-size="{size * 0.3}" fill={color}>{percentage}%</text>
+    </svg>
+    """
 
 if 'df' not in st.session_state:
     st.session_state['df'] = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
+if 'imgs' not in st.session_state:
+    st.session_state['imgs'] = {}
 
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
@@ -38,7 +61,7 @@ if uploaded_files:
     for tab, file in zip(tabs, uploaded_files):
         with tab:
             img1, img2 = get_model_segmentation(file, 1000)
-            append_metrics(file.name, img2)
+            cell_count, cell_area, confluency, avg_neighbors = append_metrics(file, img2)
             image_comparison(
                 img1=img1,
                 img2=img2,
@@ -47,10 +70,30 @@ if uploaded_files:
                 make_responsive=True,
                 in_memory=False
             )
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Cell Count", cell_count)
+            col2.metric("Cell Area", cell_area)
+            col3.markdown(percentage_circle("Confluency", confluency, size=80), unsafe_allow_html=True)
+            col4.metric("Average Neighbors", avg_neighbors)
 
 
 if st.sidebar.button("Show metrics"):
-    st.dataframe(st.session_state['df'])
+    st.dataframe(
+        st.session_state['df'],
+        column_config={
+            "file name": "File",
+            "cell count": "Cell Count",
+            "avg cell area": "Average Cell Area",
+            "confluency": st.column_config.ProgressColumn(
+                "Confluency",
+                format="%d%%",
+                min_value=0,
+                max_value=100,
+            ),
+            "avg neighbors": "Average Neighbors"
+        },
+        hide_index=True
+    )
 
 csv = df_to_csv()
 file_name = "metrics.csv"
