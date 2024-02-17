@@ -10,28 +10,36 @@ def df_to_csv(df):
     return df.to_csv().encode('utf-8')
 
 @st.cache_data
-def get_model_segmentation(uploaded_file):
-    if uploaded_file:
-        model = ToyModel()
-        input_image = Image.open(uploaded_file)
-        output_image = model(np.array(input_image))
-        image_comparison(
-            img1=input_image,
-            img2=output_image
-        )
+def get_model_segmentation(uploaded_file, new_width):
+    print("PERFORMING COMPARISON")
+    model = ToyModel()
+    input_image = Image.open(uploaded_file)
+    output_image = model(np.array(input_image))
+    width_percent = (new_width / float(input_image.size[0]))
+    new_height = int((float(input_image.size[1]) * float(width_percent)))
+    return input_image.resize((new_width, new_height)), output_image
 
 st.title("SAMCell")
-st.caption("A Cell Segmentation Model powered by Segment Anything Model")
+st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
 
-uploaded_file = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
-get_model_segmentation(uploaded_file)
+# uploaded_file = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'))
+# get_model_segmentation(uploaded_file)
 
 # TODO: Multiple files
-# uploaded_files = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), accept_multiple_files=True)
-# if uploaded_files:
-#     for file in uploaded_files:
-#         model = ToyModel()
-#         data =
+uploaded_files = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), accept_multiple_files=True)
+if uploaded_files:
+    tabs = st.tabs([file.name for file in uploaded_files])
+    for tab, file in zip(tabs, uploaded_files):
+        with tab:
+            img1, img2 = get_model_segmentation(file, 1000)
+            image_comparison(
+                img1=img1,
+                img2=img2,
+                label1=f"Original: {file.name}",
+                label2=f"SAMCell: {file.name}",
+                make_responsive=True,
+                in_memory=False
+            )
 
 df = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
 
