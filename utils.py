@@ -11,7 +11,10 @@ def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
         label_rainbow[label == cell] = np.random.rand(3) * 255
     return label_rainbow
 
-def computeMetrics(output: np.ndarray) -> Tuple[int, float, str, float]:
+def compute_metrics(output: np.ndarray) -> Tuple[int, float, str, float]:
+    return np.random.randint(0, 100, size=4)
+
+def _compute_metrics(output: np.ndarray) -> Tuple[int, float, str, float]:
     #compute cell count
     cell_count = len(np.unique(output)) - 1
 
@@ -58,10 +61,6 @@ class ToyModel(torch.nn.Module):
     def forward(self, data: np.ndarray) -> np.ndarray:
         inputs = torch.from_numpy(data[:,:,:3]).to(torch.float32)
         inputs = torch.unsqueeze(inputs.permute(2, 0, 1), 0)
-        # sobel = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
-        # depth = t.size()[1]
-        # channels = t.size()[2]
-        # sobel_kernel = torch.tensor(sobel, dtype=torch.float32).unsqueeze(0).expand(depth, 1, channels, 3, 3)
         filters = torch.randn(1, 3, 3, 3).to(torch.float32)
         outputs = torch.squeeze(torch.nn.functional.conv2d(inputs, filters, padding=1))
         return outputs.numpy()

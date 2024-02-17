@@ -6,18 +6,24 @@ from PIL import Image
 from utils import *
 
 @st.cache_data
-def df_to_csv(df):
-    return df.to_csv().encode('utf-8')
+def df_to_csv():
+    return st.session_state['df'].to_csv().encode('utf-8')
 
 @st.cache_data
 def get_model_segmentation(uploaded_file, new_width):
-    print("PERFORMING COMPARISON")
     model = ToyModel()
     input_image = Image.open(uploaded_file)
     output_image = model(np.array(input_image))
     width_percent = (new_width / float(input_image.size[0]))
     new_height = int((float(input_image.size[1]) * float(width_percent)))
     return input_image.resize((new_width, new_height)), output_image
+
+@st.cache_data
+def append_metrics(filename, output):
+    st.session_state['df'].loc[len(st.session_state['df'])] = (filename, *compute_metrics(output))
+
+if 'df' not in st.session_state:
+    st.session_state['df'] = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
 
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
@@ -32,6 +38,7 @@ if uploaded_files:
     for tab, file in zip(tabs, uploaded_files):
         with tab:
             img1, img2 = get_model_segmentation(file, 1000)
+            append_metrics(file.name, img2)
             image_comparison(
                 img1=img1,
                 img2=img2,
@@ -41,13 +48,11 @@ if uploaded_files:
                 in_memory=False
             )
 
-df = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
 
-if st.sidebar.button("Generate random data"):
-    df.loc[len(df)] = (np.random.randint(0, 100, size=5))
-    st.dataframe(df)
+if st.sidebar.button("Show metrics"):
+    st.dataframe(st.session_state['df'])
 
-csv = df_to_csv(df)
+csv = df_to_csv()
 file_name = "metrics.csv"
 
 if st.download_button(
