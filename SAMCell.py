@@ -95,6 +95,10 @@ if st.sidebar.button("Show metrics"):
         hide_index=True
     )
 
+if st.sidebar.button("New session"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+
 csv = df_to_csv()
 file_name = "metrics.csv"
 
