@@ -1,11 +1,18 @@
 import streamlit as st
 from streamlit_image_comparison import image_comparison
 from utils import *
+import pandas as pd
 import requests
 import base64
 
 if 'image_comparisons' not in st.session_state:
     st.session_state.image_comparisons = {}
+if 'df' not in st.session_state:
+    st.session_state['df'] = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
+
+@st.cache_data
+def df_to_csv():
+    return st.session_state['df'].to_csv().encode('utf-8')
 
 @st.cache_data
 def query(payload):
@@ -37,7 +44,7 @@ def get_batch_segmentation(uploaded_files):
     pred = query(payload)
 
     if 'labels' not in pred:
-        return {}
+        return [], {}
 
     labels = pred["labels"]
     # list of ndarray
@@ -63,7 +70,7 @@ def get_batch_segmentation(uploaded_files):
         ret = (Image.open(uploaded_file), Image.fromarray(output_rgb))
         rets[uploaded_file.name] = ret
 
-    return rets
+    return outputs, rets
 
 @st.cache_data
 def get_model_segmentation(uploaded_file, new_width=1000):
@@ -124,11 +131,22 @@ if uploaded_files:
         #     st.session_state.image_comparisons = {}
 
         # For batch endpoint requests (preferred)
-        st.session_state.image_comparisons = get_batch_segmentation(uploaded_files)
+        outputs, st.session_state.image_comparisons = get_batch_segmentation(uploaded_files)
 
         if len(st.session_state.image_comparisons.keys()) == 0:
             st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
             st.session_state.image_comparisons = {}
+        else:
+            for file, output in zip(uploaded_files, outputs):
+                metrics = compute_metrics(output)
+
+                # print(f'image: {file.name}')
+                # print(f'\t cell count: {cell_count}')
+                # print(f'\t avg cell area: {cell_area}')
+                # print(f'\t confluency: {confluency}')
+                # print(f'\t avg neighbors: {avg_neighbors}')
+
+                st.session_state['df'].loc[len(st.session_state['df'])] = (file.name, *metrics)
 
 
 dropdown = st.selectbox(
@@ -155,36 +173,32 @@ if img1 and img2:
         in_memory=False
     )
 
-        # st.session_state.dropdown = st.selectbox(
-        #     label="Select an image to preview",
-        #     index=0,
-        #     options=st.session_state.image_comparisons.keys(),
-        # )
+    if st.button("Show metrics"):
+        st.dataframe(
+            st.session_state['df'],
+            column_config={
+                "file name": "File",
+                "cell count": "Cell Count",
+                "avg cell area": "Average Cell Area",
+                "confluency": st.column_config.ProgressColumn(
+                    "Confluency",
+                    format="%d%%",
+                    min_value=0,
+                    max_value=100,
+                ),
+                "avg neighbors": "Average Neighbors"
+            },
+            hide_index=True
+        )
 
-    # tabs = st.tabs([file.name for file in uploaded_files])
-    # image_comparisons = [get_model_segmentation(file) for file in uploaded_files]
-    # # for file in uploaded_files:
-    # #     img1, img2 = get_model_segmentation(file)
-    # #     image_comparisons.append(
-    # #         image_comparison(
-    # #             img1=img1,
-    # #             img2=img2,
-    # #             label1=f"Original: {file.name}",
-    # #             label2=f"SAMCell: {file.name}",
-    # #             make_responsive=True,
-    # #             in_memory=False
-    # #         )
-    # #     )
-    # for tab, file, img in zip(tabs, uploaded_files, image_comparisons):
-    #     with tab:
-    #         img1, img2 = img
-    #         image_comparison(
-    #             img1=img1,
-    #             img2=img2,
-    #             label1=f"Original: {file.name}",
-    #             label2=f"SAMCell: {file.name}",
-    #             make_responsive=True,
-    #             in_memory=False
-    #         )
-    #         # f"{file}"
-    #         # f"{file.name}"
+    csv = df_to_csv()
+    file_name = "metrics.csv"
+
+    if st.download_button(
+        label="Download analysis",
+        data = csv,
+        file_name=file_name,
+        mime='text/csv'
+    ):
+        # Confirmation message
+        st.success(f"Data written to {file_name} successfully.")

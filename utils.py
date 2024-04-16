@@ -34,10 +34,10 @@ def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
         label_rainbow[label == cell] = np.random.rand(3) * 255
     return label_rainbow
 
-def compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
-    return np.random.randint(0, 100, size=4)
+# def compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
+#     return np.random.randint(0, 100, size=4)
 
-def _compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
+def compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
     #compute cell count
     cell_count = len(np.unique(output)) - 1
 
