@@ -1,5 +1,5 @@
 SAMCell.py
-.yml
+environment.yml
 .venv
 .DS_Store
 output/
