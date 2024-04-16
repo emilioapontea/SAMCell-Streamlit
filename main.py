@@ -4,6 +4,7 @@ from utils import *
 import pandas as pd
 import requests
 import base64
+from io import BytesIO
 
 if 'image_comparisons' not in st.session_state:
     st.session_state.image_comparisons = {}
@@ -13,6 +14,12 @@ if 'df' not in st.session_state:
 @st.cache_data
 def df_to_csv():
     return st.session_state['df'].to_csv().encode('utf-8')
+
+@st.cache_data
+def pil_to_png(img):
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 @st.cache_data
 def query(payload):
@@ -171,6 +178,14 @@ if img1 and img2:
         label2=f"SAMCell: {dropdown}",
         make_responsive=True,
         in_memory=False
+    )
+
+    download_img = pil_to_png(img2)
+    btn = st.download_button(
+        label=f"Download `proc-{dropdown}`",
+        data=download_img,
+        file_name=f"proc-{dropdown}",
+        mime="image/png"
     )
 
     if st.button("Show metrics"):
