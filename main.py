@@ -70,6 +70,9 @@ if uploaded_files:
     if st.button(label=f"Run SAMCell on {len(uploaded_files)} image(s)"):
         for file in uploaded_files:
             st.session_state.image_comparisons[file.name] = get_model_segmentation(file)
+        if not all(st.session_state.image_comparisons.values()):
+            st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
+            st.session_state.image_comparisons = {}
 
 dropdown = st.selectbox(
     label="Preview segmentation",

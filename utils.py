@@ -1,22 +1,23 @@
 from typing import Tuple
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import torch
 import cv2
 
 def load_image(file_path):
-  image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-  max_dimension = 1000
-  height, width = image.shape[:2]
-  if height > width:
-      new_height = max_dimension
-      new_width = int(width * (max_dimension / height))
-  else:
-      new_width = max_dimension
-      new_height = int(height * (max_dimension / width))
+    image = np.array(ImageOps.grayscale(Image.open(file_path)))
+    # image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+    max_dimension = 1000
+    height, width = image.shape[:2]
+    if height > width:
+        new_height = max_dimension
+        new_width = int(width * (max_dimension / height))
+    else:
+        new_width = max_dimension
+        new_height = int(height * (max_dimension / width))
 
-  resized_image = cv2.resize(image, (new_width, new_height))
-  return image
+    resized_image = cv2.resize(image, (new_width, new_height))
+    return image
 
 def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
     label_rainbow = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
@@ -68,18 +69,4 @@ def _compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
     # confluency = f'{int(confluency)}%'
     confluency = int(confluency)
 
-    return cell_count, cell_area, confluency, avg_neighbors
-
-class ToyModel(torch.nn.Module):
-    def __init__(self):
-        return
-
-    def forward(self, data: np.ndarray) -> np.ndarray:
-        inputs = torch.from_numpy(data[:,:,:3]).to(torch.float32)
-        inputs = torch.unsqueeze(inputs.permute(2, 0, 1), 0)
-        filters = torch.randn(1, 3, 3, 3).to(torch.float32)
-        outputs = torch.squeeze(torch.nn.functional.conv2d(inputs, filters, padding=1))
-        return outputs.numpy()
-
-    def __call__(self, data: np.ndarray) -> np.ndarray:
-        return self.forward(data)
+    return cell_count, cell_area, confluency, avg_nei
