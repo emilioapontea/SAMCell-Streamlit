@@ -69,4 +69,18 @@ def _compute_metrics(output: np.ndarray) -> Tuple[int, float, int, float]:
     # confluency = f'{int(confluency)}%'
     confluency = int(confluency)
 
-    return cell_count, cell_area, confluency, avg_nei
+    return cell_count, cell_area, confluency, avg_neighbors
+
+class ToyModel(torch.nn.Module):
+    def __init__(self):
+        return
+
+    def forward(self, data: np.ndarray) -> np.ndarray:
+        inputs = torch.from_numpy(data[:,:,:3]).to(torch.float32)
+        inputs = torch.unsqueeze(inputs.permute(2, 0, 1), 0)
+        filters = torch.randn(1, 3, 3, 3).to(torch.float32)
+        outputs = torch.squeeze(torch.nn.functional.conv2d(inputs, filters, padding=1))
+        return outputs.numpy()
+
+    def __call__(self, data: np.ndarray) -> np.ndarray:
+        return self.forward(data)
