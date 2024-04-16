@@ -77,6 +77,15 @@ if 'df' not in st.session_state:
 if 'imgs' not in st.session_state:
     st.session_state['imgs'] = {}
 
+if st.sidebar.button("New session"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.session_state.clear()
+    if 'df' not in st.session_state:
+        st.session_state['df'] = pd.DataFrame(columns=['file name', 'cell count', 'avg cell area', 'confluency', 'avg neighbors'])
+    if 'imgs' not in st.session_state:
+        st.session_state['imgs'] = {}
+
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
 
@@ -84,7 +93,11 @@ st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDevel
 # get_model_segmentation(uploaded_file)
 
 # TODO: Multiple files
-uploaded_files = st.file_uploader("Upload an image", type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'), accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Upload an image",
+    type=('.png', '.jpg', '.jpeg', 'tif', 'tiff'),
+    accept_multiple_files=True,
+)
 if uploaded_files:
     tabs = st.tabs([file.name for file in uploaded_files])
     for tab, file in zip(tabs, uploaded_files):
@@ -123,10 +136,6 @@ if st.sidebar.button("Show metrics"):
         },
         hide_index=True
     )
-
-if st.sidebar.button("New session"):
-    st.cache_data.clear()
-    st.cache_resource.clear()
 
 csv = df_to_csv()
 file_name = "metrics.csv"
