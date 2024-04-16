@@ -2,7 +2,7 @@ from typing import Tuple
 import numpy as np
 from PIL import Image, ImageOps
 import torch
-import cv2
+# import cv2
 
 def load_images(file_list):
     images = []
@@ -23,7 +23,7 @@ def load_image(file_path):
         new_width = max_dimension
         new_height = int(height * (max_dimension / width))
 
-    resized_image = cv2.resize(image, (new_width, new_height))
+    # resized_image = cv2.resize(image, (new_width, new_height))
     return image
 
 def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:

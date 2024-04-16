@@ -24,9 +24,10 @@ def pil_to_png(img):
 @st.cache_data
 def query(payload):
     API_URL = st.secrets["db_url"]
+    API_TOKEN = st.secrets["db_token"]
     headers = {
         "Accept" : "application/json",
-        "Authorization": f"Bearer {st.secrets["db_token"]}",
+        "Authorization": f"Bearer {API_TOKEN}",
         "Content-Type": "application/json"
     }
     response = requests.post(API_URL, headers=headers, json=payload)
