@@ -23,10 +23,10 @@ def pil_to_png(img):
 
 @st.cache_data
 def query(payload):
-    API_URL = "https://yn8lan37azo8xw3k.us-east-1.aws.endpoints.huggingface.cloud"
+    API_URL = st.secrets["db_url"]
     headers = {
         "Accept" : "application/json",
-        "Authorization": "Bearer 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",
+        "Authorization": f"Bearer {st.secrets["db_token"]}",
         "Content-Type": "application/json"
     }
     response = requests.post(API_URL, headers=headers, json=payload)
