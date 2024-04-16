@@ -4,6 +4,13 @@ from PIL import Image, ImageOps
 import torch
 import cv2
 
+def load_images(file_list):
+    images = []
+    for file in file_list:
+        image = load_image(file)
+        images.append(image)
+    return images
+
 def load_image(file_path):
     image = np.array(ImageOps.grayscale(Image.open(file_path)))
     # image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)

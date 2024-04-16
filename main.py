@@ -19,6 +19,53 @@ def query(payload):
     return response.json()
 
 @st.cache_data
+def get_batch_segmentation(uploaded_files):
+    # a list of ndarray
+    batch = load_images(uploaded_files)
+    # a list of base64 json dictionaries
+    images = []
+    for image in batch:
+        img_dict = {
+            'data': base64.b64encode(image.tobytes()).decode('utf-8'),
+            'shape': image.shape,
+            'dtype': str(image.dtype)
+        }
+        images.append(img_dict)
+
+    payload = {"inputs": images}
+
+    pred = query(payload)
+
+    if 'labels' not in pred:
+        return {}
+
+    labels = pred["labels"]
+    # list of ndarray
+    outputs = []
+    for label in labels:
+        # Unpack response (base64 encoding of ndarray)
+        encoded_labels = label['data']
+        labels_shape = label['shape']
+        labels_dtype = label['dtype']
+        # Decode Base64 encoded data
+        decoded_response = base64.b64decode(encoded_labels)
+        # Reconstruct ndarray
+        output = np.frombuffer(decoded_response, dtype=np.dtype(labels_dtype))
+        output = output.reshape(labels_shape)
+
+        outputs.append(output)
+
+    #! This *MIGHT* mess up the order of names and outputs
+    rets = {}
+    for uploaded_file, output in zip(uploaded_files, outputs):
+        output_rgb = convert_label_to_rainbow(output)
+        # cv2.imwrite(f'/content/outputs/proc-orig.png', output_rgb)
+        ret = (Image.open(uploaded_file), Image.fromarray(output_rgb))
+        rets[uploaded_file.name] = ret
+
+    return rets
+
+@st.cache_data
 def get_model_segmentation(uploaded_file, new_width=1000):
     # return Image.open(uploaded_file), Image.open('res/proc-orig.png')
 
@@ -68,11 +115,21 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     if st.button(label=f"Run SAMCell on {len(uploaded_files)} image(s)"):
-        for file in uploaded_files:
-            st.session_state.image_comparisons[file.name] = get_model_segmentation(file)
-        if not all(st.session_state.image_comparisons.values()):
+        # with st.spinner('Sit tight! SAMCell is processing your images...'):
+        # For single image request
+        # for file in uploaded_files:
+        #     st.session_state.image_comparisons[file.name] = get_model_segmentation(file)
+        # if not all(st.session_state.image_comparisons.values()):
+        #     st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
+        #     st.session_state.image_comparisons = {}
+
+        # For batch endpoint requests (preferred)
+        st.session_state.image_comparisons = get_batch_segmentation(uploaded_files)
+
+        if len(st.session_state.image_comparisons.keys()) == 0:
             st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
             st.session_state.image_comparisons = {}
+
 
 dropdown = st.selectbox(
     label="Preview segmentation",
