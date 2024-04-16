@@ -2,6 +2,21 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 import torch
+import cv2
+
+def load_image(file_path):
+  image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+  max_dimension = 1000
+  height, width = image.shape[:2]
+  if height > width:
+      new_height = max_dimension
+      new_width = int(width * (max_dimension / height))
+  else:
+      new_width = max_dimension
+      new_height = int(height * (max_dimension / width))
+
+  resized_image = cv2.resize(image, (new_width, new_height))
+  return image
 
 def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
     label_rainbow = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
