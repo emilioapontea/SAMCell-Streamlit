@@ -7,6 +7,7 @@ import requests
 import base64
 from io import BytesIO
 
+
 if 'endpoint_available' not in st.session_state:
     st.session_state.endpoint_available = False
 if 'image_comparisons' not in st.session_state:
@@ -135,110 +136,114 @@ def get_model_segmentation(uploaded_file, new_width=1000):
 
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
-st.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
-
+info = st.empty()
+button = st.empty()
 if not st.session_state.endpoint_available:
-    with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
-        q = None
-        while q is None or q['error'] == '503 Service Unavailable':
-            q = init_query()
-            time.sleep(5)
-        st.session_state.endpoint_available = True
-
-
-uploaded_files = st.file_uploader(
-    label="Select image(s) to segment",
-    accept_multiple_files=True,
-    type=('.png', '.jpg', '.jpeg', 'tif', 'tiff')
-)
-
-if uploaded_files:
-    if st.button(label=f"Run SAMCell on {len(uploaded_files)} image(s)"):
-        # with st.spinner('Sit tight! SAMCell is processing your images...'):
-        # For single image request
-        # for file in uploaded_files:
-        #     st.session_state.image_comparisons[file.name] = get_model_segmentation(file)
-        # if not all(st.session_state.image_comparisons.values()):
-        #     st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
-        #     st.session_state.image_comparisons = {}
-
-        # For batch endpoint requests (preferred)
-        outputs, st.session_state.image_comparisons = get_batch_segmentation(uploaded_files)
-
-        if len(st.session_state.image_comparisons.keys()) == 0:
-            st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
-            st.session_state.image_comparisons = {}
-        else:
-            for file, output in zip(uploaded_files, outputs):
-                metrics = compute_metrics(output)
-
-                # print(f'image: {file.name}')
-                # print(f'\t cell count: {cell_count}')
-                # print(f'\t avg cell area: {cell_area}')
-                # print(f'\t confluency: {confluency}')
-                # print(f'\t avg neighbors: {avg_neighbors}')
-
-                st.session_state['df'].loc[len(st.session_state['df'])] = (file.name, *metrics)
-
-
-dropdown = st.selectbox(
-    label="Preview segmentation",
-    placeholder="Select an image to preview...",
-    # index=0,
-    options=st.session_state.image_comparisons.keys(),
-    # options=[file.name for file in uploaded_files]
-)
-
-img1, img = None, None
-if dropdown:
-    img1, img2 = st.session_state.image_comparisons[dropdown]
-
-# st.write(f'Comparing images: {img1} : {img2}')
-
-if img1 and img2:
-    image_comparison(
-        img1=img1,
-        img2=img2,
-        label1=f"Original: {dropdown}",
-        label2=f"SAMCell: {dropdown}",
-        make_responsive=True,
-        in_memory=False
+    if button.button('Get Started!'):
+        button.empty()
+        with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
+            q = None
+            while q is None or q['error'] == '503 Service Unavailable':
+                info.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
+                q = init_query()
+                time.sleep(5)
+            info.empty()
+            st.session_state.endpoint_available = True
+            st.rerun()
+else:
+    uploaded_files = st.file_uploader(
+        label="Select image(s) to segment",
+        accept_multiple_files=True,
+        type=('.png', '.jpg', '.jpeg', 'tif', 'tiff')
     )
 
-    download_img = pil_to_png(img2)
-    btn = st.download_button(
-        label=f"Download `proc-{dropdown}`",
-        data=download_img,
-        file_name=f"proc-{dropdown}",
-        mime="image/png"
+    if uploaded_files:
+        if st.button(label=f"Run SAMCell on {len(uploaded_files)} image(s)"):
+            # with st.spinner('Sit tight! SAMCell is processing your images...'):
+            # For single image request
+            # for file in uploaded_files:
+            #     st.session_state.image_comparisons[file.name] = get_model_segmentation(file)
+            # if not all(st.session_state.image_comparisons.values()):
+            #     st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
+            #     st.session_state.image_comparisons = {}
+
+            # For batch endpoint requests (preferred)
+            outputs, st.session_state.image_comparisons = get_batch_segmentation(uploaded_files)
+
+            if len(st.session_state.image_comparisons.keys()) == 0:
+                st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
+                st.session_state.image_comparisons = {}
+            else:
+                for file, output in zip(uploaded_files, outputs):
+                    metrics = compute_metrics(output)
+
+                    # print(f'image: {file.name}')
+                    # print(f'\t cell count: {cell_count}')
+                    # print(f'\t avg cell area: {cell_area}')
+                    # print(f'\t confluency: {confluency}')
+                    # print(f'\t avg neighbors: {avg_neighbors}')
+
+                    st.session_state['df'].loc[len(st.session_state['df'])] = (file.name, *metrics)
+
+
+    dropdown = st.selectbox(
+        label="Preview segmentation",
+        placeholder="Select an image to preview...",
+        # index=0,
+        options=st.session_state.image_comparisons.keys(),
+        # options=[file.name for file in uploaded_files]
     )
 
-    if st.button("Show metrics"):
-        st.dataframe(
-            st.session_state['df'],
-            column_config={
-                "file name": "File",
-                "cell count": "Cell Count",
-                "avg cell area": "Average Cell Area",
-                "confluency": st.column_config.ProgressColumn(
-                    "Confluency",
-                    format="%d%%",
-                    min_value=0,
-                    max_value=100,
-                ),
-                "avg neighbors": "Average Neighbors"
-            },
-            hide_index=True
+    img1, img = None, None
+    if dropdown:
+        img1, img2 = st.session_state.image_comparisons[dropdown]
+
+    # st.write(f'Comparing images: {img1} : {img2}')
+
+    if img1 and img2:
+        image_comparison(
+            img1=img1,
+            img2=img2,
+            label1=f"Original: {dropdown}",
+            label2=f"SAMCell: {dropdown}",
+            make_responsive=True,
+            in_memory=False
         )
 
-    csv = df_to_csv()
-    file_name = "metrics.csv"
+        download_img = pil_to_png(img2)
+        btn = st.download_button(
+            label=f"Download `proc-{dropdown}`",
+            data=download_img,
+            file_name=f"proc-{dropdown}",
+            mime="image/png"
+        )
 
-    if st.download_button(
-        label="Download analysis",
-        data = csv,
-        file_name=file_name,
-        mime='text/csv'
-    ):
-        # Confirmation message
-        st.success(f"Data written to {file_name} successfully.")
+        if st.button("Show metrics"):
+            st.dataframe(
+                st.session_state['df'],
+                column_config={
+                    "file name": "File",
+                    "cell count": "Cell Count",
+                    "avg cell area": "Average Cell Area",
+                    "confluency": st.column_config.ProgressColumn(
+                        "Confluency",
+                        format="%d%%",
+                        min_value=0,
+                        max_value=100,
+                    ),
+                    "avg neighbors": "Average Neighbors"
+                },
+                hide_index=True
+            )
+
+        csv = df_to_csv()
+        file_name = "metrics.csv"
+
+        if st.download_button(
+            label="Download analysis",
+            data = csv,
+            file_name=file_name,
+            mime='text/csv'
+        ):
+            # Confirmation message
+            st.success(f"Data written to {file_name} successfully.")
