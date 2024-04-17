@@ -7,6 +7,8 @@ import requests
 import base64
 from io import BytesIO
 
+if 'endpoint_available' not in st.session_state:
+    st.session_state.endpoint_available = False
 if 'image_comparisons' not in st.session_state:
     st.session_state.image_comparisons = {}
 if 'df' not in st.session_state:
@@ -135,11 +137,13 @@ st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
 st.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
 
-with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
+if not st.session_state.endpoint_available:
+    with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
         q = None
         while q is None or q['error'] == '503 Service Unavailable':
             q = init_query()
             time.sleep(5)
+        st.session_state.endpoint_available = True
 
 
 uploaded_files = st.file_uploader(
