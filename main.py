@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 from streamlit_image_comparison import image_comparison
 from utils import *
@@ -121,6 +122,13 @@ def get_model_segmentation(uploaded_file, new_width=1000):
 
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
+
+with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
+    q = None
+    while q is None or q['error'] == '503 Service Unavailable':
+        time.sleep(5)
+        q = query({})
+
 
 uploaded_files = st.file_uploader(
     label="Select image(s) to segment",
