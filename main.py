@@ -22,6 +22,17 @@ def pil_to_png(img):
     img.save(buf, format="PNG")
     return buf.getvalue()
 
+def init_query():
+    API_URL = st.secrets["db_url"]
+    API_TOKEN = st.secrets["db_token"]
+    headers = {
+        "Accept" : "application/json",
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(API_URL, headers=headers, json={})
+    return response.json()
+
 @st.cache_data
 def query(payload):
     API_URL = st.secrets["db_url"]
@@ -124,10 +135,12 @@ st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
 
 with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
-    q = None
-    while q is None or q['error'] == '503 Service Unavailable':
-        time.sleep(5)
-        q = query({})
+    with st.empty():
+        q = None
+        st.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
+        while q is None or q['error'] == '503 Service Unavailable':
+            time.sleep(5)
+            q = init_query()
 
 
 uploaded_files = st.file_uploader(
