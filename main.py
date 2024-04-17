@@ -133,14 +133,13 @@ def get_model_segmentation(uploaded_file, new_width=1000):
 
 st.title("SAMCell")
 st.caption("A Cell Segmentation Model powered by Segment Anything Model  \nDeveloped by the [Georgia Tech Precision Biosystems Lab](https://pbl.gatech.edu/)")
+st.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
 
 with st.spinner('Sit tight! SAMCell is starting up... (this may take a few minutes)'):
-    with st.empty():
         q = None
-        st.info("SAMCell is setup to sleep after 15 minutes without requests", icon="🥱")
         while q is None or q['error'] == '503 Service Unavailable':
-            time.sleep(5)
             q = init_query()
+            time.sleep(5)
 
 
 uploaded_files = st.file_uploader(
