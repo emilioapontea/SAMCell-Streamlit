@@ -24,6 +24,7 @@ def load_image(file_path):
         new_height = int(height * (max_dimension / width))
 
     # resized_image = cv2.resize(image, (new_width, new_height))
+    image = image.resize((new_width, new_height), Image.ANTIALIAS)
     return image
 
 def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
