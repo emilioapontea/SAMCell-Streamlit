@@ -282,13 +282,23 @@ else:
             in_memory=False
         )
 
-        download_img = pil_to_png(img2)
-        btn = st.download_button(
-            label=f"Download `proc-{dropdown}`",
-            data=download_img,
-            file_name=f"proc-{dropdown}",
-            mime="image/png"
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:
+            download_img = pil_to_png(img2)
+            file_prefix = st.text_input(
+                "Enter a file download prefix",
+                placeholder="Enter a file download prefix",
+                label_visibility='collapsed'
+            )
+        with col2:
+            if file_prefix:
+                btn = st.download_button(
+                    label=f"Download `{file_prefix}-{dropdown}`",
+                    data=download_img,
+                    file_name=f"{file_prefix}-{dropdown}",
+                    mime="image/png"
+                )
 
         if st.button("Show metrics"):
             st.dataframe(
