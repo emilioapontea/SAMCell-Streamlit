@@ -6,6 +6,7 @@ import pandas as pd
 import requests
 import base64
 from io import BytesIO
+import zipfile
 
 
 if 'endpoint_available' not in st.session_state:
@@ -24,6 +25,28 @@ def pil_to_png(img):
     buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
+
+@st.cache_data(show_spinner=False)
+def get_all_pngs(file_prefix, _image_dict):
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for key in _image_dict:
+            img2, img1 = _image_dict[key]
+            orig_name = f"orig/{'.'.join(key.split('.')[:-1])}.png"
+            file_name = f"{file_prefix}/{file_prefix}-{'.'.join(key.split('.')[:-1])}.png"
+
+            img_buffer = BytesIO()
+            img1.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+
+            zip_file.writestr(file_name, img_buffer.getvalue())
+
+            img_buffer = BytesIO()
+            img2.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+
+            zip_file.writestr(orig_name, img_buffer.getvalue())
+    return zip_buffer.getvalue()
 
 def init_query():
     API_URL = st.secrets["db_url"]
@@ -242,7 +265,7 @@ else:
                 if len(st.session_state.image_comparisons.keys()) == 0:
                     status.update(label="SAMCell Error", state="error", expanded=True)
                     placeholder.empty()
-                    st.error('Oh oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
+                    st.error('Uh-oh! SAMCell did not respond to your request! If the issue persists, contact GTPBL to restart the endpoint.', icon="😴")
                     st.session_state.image_comparisons = {}
                 else:
                     status.update(label="Segmentation complete!", state="complete", expanded=False)
@@ -282,13 +305,26 @@ else:
             in_memory=False
         )
 
-        download_img = pil_to_png(img2)
-        btn = st.download_button(
-            label=f"Download `proc-{dropdown}`",
-            data=download_img,
-            file_name=f"proc-{dropdown}",
-            mime="image/png"
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # download_img = pil_to_png(img2)
+            file_prefix = st.text_input(
+                "Enter a file download prefix",
+                placeholder=f"e.g. proc for `proc-{dropdown}`",
+                label_visibility='visible',
+                help="Text to be added to the download file name to distinguish between original and processed files."
+            )
+        with col2:
+            if file_prefix:
+                download_img = get_all_pngs(file_prefix, st.session_state.image_comparisons)
+                btn = st.download_button(
+                    label=f"Download `SAMCell-eval.zip`",
+                    data=download_img,
+                    file_name=f"SAMCell-eval.zip",
+                    mime="application/zip",
+                    help=f"Downloads a zip file containing the original files in a folder named `orig` and the processed images in a folder named `{file_prefix}`."
+                )
 
         if st.button("Show metrics"):
             st.dataframe(
