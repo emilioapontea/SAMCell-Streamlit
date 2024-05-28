@@ -12,10 +12,11 @@ def load_images(file_list):
     return images
 
 def load_image(file_path):
-    image = np.array(ImageOps.grayscale(Image.open(file_path)))
+    image = ImageOps.grayscale(Image.open(file_path))
+    image_arr = np.array(image)
     # image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
     max_dimension = 1000
-    height, width = image.shape[:2]
+    height, width = image_arr.shape[:2]
     if height > width:
         new_height = max_dimension
         new_width = int(width * (max_dimension / height))
@@ -24,8 +25,10 @@ def load_image(file_path):
         new_height = int(height * (max_dimension / width))
 
     # resized_image = cv2.resize(image, (new_width, new_height))
-    image = image.resize((new_width, new_height), Image.ANTIALIAS)
-    return image
+    new_image = image.resize((new_width, new_height))
+    new_image_arr = np.array(new_image)
+
+    return new_image_arr
 
 def convert_label_to_rainbow(label: np.ndarray) -> np.ndarray:
     label_rainbow = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
