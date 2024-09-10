@@ -7,7 +7,7 @@ import requests
 import base64
 from io import BytesIO
 import zipfile
-
+from highlight import interactive_image_with_zoom
 
 if 'endpoint_available' not in st.session_state:
     st.session_state.endpoint_available = False
@@ -73,7 +73,7 @@ def query(payload):
 
 @st.cache_data(show_spinner=False)
 def package_payload(uploaded_files):
-    # a list of ndarray
+    # a list of ndarray 
     batch = load_images(uploaded_files)
     # a list of base64 json dictionaries
     images = []
@@ -304,7 +304,8 @@ else:
             make_responsive=True,
             in_memory=False
         )
-
+        st.write("hover over segments to highlight them. Click to zoom")
+        interactive_image_with_zoom(img2)
         col1, col2 = st.columns(2)
 
         with col1:
